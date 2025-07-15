@@ -1,0 +1,18 @@
+This directory is for PlatformIO Unit Testing and project tests.
+
+Unit Testing is a software testing method where individual units of source code are tested to determine whether they are fit for use.
+
+Example test structure:
+
+test/
+|--test_main.cpp
+|--test_device/
+|  |--test_stepper.cpp
+|  |--test_servo.cpp
+|--test_command/
+   |--test_parser.cpp
+
+To run tests:
+pio test
+
+See: https://docs.platformio.org/page/plus/unit-testing.html

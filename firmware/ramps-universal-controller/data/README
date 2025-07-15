@@ -1,0 +1,13 @@
+This directory is for data files that may be uploaded to the device file system.
+
+For devices with SPIFFS, LittleFS, or SD card support, files placed here can be uploaded using:
+
+pio run -t uploadfs
+
+Potential uses:
+- Configuration files
+- Web interface files (HTML, CSS, JS)
+- Calibration data
+- G-code or command sequences
+
+Note: The Arduino Mega does not have built-in filesystem support, but this directory is included for future expansion (e.g., SD card support).

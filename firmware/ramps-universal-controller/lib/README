@@ -1,0 +1,15 @@
+This directory is for project-specific (private) libraries.
+
+PlatformIO will compile these libraries and include them in the build process.
+
+Place any custom libraries here that are not available in the PlatformIO Registry.
+
+The source code of each library should be placed in separate directories:
+
+lib/
+|--MyCustomLibrary/
+|  |--src/
+|     |--MyCustomLibrary.h
+|     |--MyCustomLibrary.cpp
+
+See: https://docs.platformio.org/page/librarymanager/creating.html

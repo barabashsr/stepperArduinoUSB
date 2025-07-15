@@ -1,0 +1,7 @@
+This directory contains configuration header files for the RAMPS Universal Controller:
+
+- Config.h: Main system configuration (baud rates, timeouts, features)
+- PinDefinitions.h: Complete RAMPS 1.4 pin mapping
+- DeviceConfig.h: Device-specific configuration (names, parameters)
+
+These headers allow customization without modifying source code.
