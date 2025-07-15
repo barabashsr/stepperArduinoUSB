@@ -31,6 +31,10 @@ enum class CommandType {
     CALIBRATE,
     RESET,
     
+    // Control commands
+    ENABLE,
+    DISABLE,
+    
     // System commands
     LIST,
     CMD_PING,    // Renamed from PING to avoid AVR macro conflict

@@ -149,6 +149,10 @@ CommandType Command::parseCommandType(const String& interfaceStr) {
         return CommandType::CALIBRATE;
     } else if (interfaceStr == "reset") {
         return CommandType::RESET;
+    } else if (interfaceStr == "enable") {
+        return CommandType::ENABLE;
+    } else if (interfaceStr == "disable") {
+        return CommandType::DISABLE;
     } else if (interfaceStr == "list") {
         return CommandType::LIST;
     } else if (interfaceStr == "ping") {
@@ -159,6 +163,10 @@ CommandType Command::parseCommandType(const String& interfaceStr) {
         return CommandType::ESTOP;
     } else if (interfaceStr == "service") {
         return CommandType::SERVICE;
+    } else if (interfaceStr == "zero" || interfaceStr == "setzero") {
+        return CommandType::RESET;  // Use RESET for zero command
+    } else if (interfaceStr == "acceleration" || interfaceStr == "accel") {
+        return CommandType::CONFIG;  // Use CONFIG for acceleration
     } else {
         return CommandType::UNKNOWN;
     }

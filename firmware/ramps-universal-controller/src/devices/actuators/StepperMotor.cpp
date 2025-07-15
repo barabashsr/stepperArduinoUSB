@@ -5,6 +5,7 @@
 
 #include "StepperMotor.h"
 #include "PinDefinitions.h"
+#include "Config.h"
 
 /**
  * @brief Constructor
@@ -40,7 +41,7 @@ bool StepperMotor::init() {
     
     // Configure enable pin
     pinMode(enablePin, OUTPUT);
-    digitalWrite(enablePin, STEPPER_ENABLE_OFF);
+    digitalWrite(enablePin, STEPPER_ENABLE_OFF);  // Start disabled
     
     // Configure stepper parameters
     stepper->setMaxSpeed(speedUnitsToSteps(maxVelocity));
@@ -54,7 +55,8 @@ bool StepperMotor::init() {
     currentVelocity = 0.0;
     targetVelocity = 0.0;
     velocityMode = false;
-    state = DeviceState::IDLE;
+    enabled = false;  // Start disabled
+    state = DeviceState::DISABLED;
     
     return true;
 }
@@ -132,7 +134,21 @@ void StepperMotor::reset() {
  * @brief Set target position
  */
 bool StepperMotor::setPosition(float position) {
-    if (!stepper || !enabled) return false;
+    if (!stepper) {
+        if (DEBUG_ENABLED) {
+            Serial.println("ERROR: StepperMotor::setPosition() - Stepper object is null");
+        }
+        return false;
+    }
+    
+    if (!enabled) {
+        if (DEBUG_ENABLED) {
+            Serial.print("ERROR: StepperMotor::setPosition() - Motor '");
+            Serial.print(name);
+            Serial.println("' is not enabled. Use 'enable' command first.");
+        }
+        return false;
+    }
     
     velocityMode = false;
     targetPosition = position;
@@ -146,7 +162,21 @@ bool StepperMotor::setPosition(float position) {
  * @brief Set target velocity
  */
 bool StepperMotor::setVelocity(float velocity) {
-    if (!stepper || !enabled) return false;
+    if (!stepper) {
+        if (DEBUG_ENABLED) {
+            Serial.println("ERROR: StepperMotor::setVelocity() - Stepper object is null");
+        }
+        return false;
+    }
+    
+    if (!enabled) {
+        if (DEBUG_ENABLED) {
+            Serial.print("ERROR: StepperMotor::setVelocity() - Motor '");
+            Serial.print(name);
+            Serial.println("' is not enabled. Use 'enable' command first.");
+        }
+        return false;
+    }
     
     // Constrain velocity
     velocity = constrainValue(velocity, -maxVelocity, maxVelocity);

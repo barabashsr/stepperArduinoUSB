@@ -414,6 +414,16 @@ Reply Controller::executeDeviceCommand(Device* device, const Command& cmd) {
                 reply.setOK(device->getName(), "stop");
                 break;
                 
+            case CommandType::ENABLE:
+                actuator->enable();
+                reply.setOK(device->getName(), "enable");
+                break;
+                
+            case CommandType::DISABLE:
+                actuator->disable();
+                reply.setOK(device->getName(), "disable");
+                break;
+                
             case CommandType::ON:
                 if (devType == DeviceType::MOSFET_OUTPUT) {
                     MosfetOutput* mosfet = static_cast<MosfetOutput*>(actuator);
@@ -435,7 +445,21 @@ Reply Controller::executeDeviceCommand(Device* device, const Command& cmd) {
                 break;
                 
             default:
-                reply.setError(device->getName(), ERROR_UNKNOWN_COMMAND, "Unknown actuator command");
+                // Check for device-specific commands by interface name
+                if (cmd.getInterface() == "acceleration" || cmd.getInterface() == "accel") {
+                    if (cmd.getIsQuery()) {
+                        reply.setValue(device->getName(), "acceleration", String(actuator->getAcceleration(), 3));
+                    } else {
+                        actuator->setAcceleration(cmd.getNumericValue());
+                        reply.setOK(device->getName(), "acceleration", cmd.getValue());
+                    }
+                } else if ((cmd.getInterface() == "zero" || cmd.getInterface() == "setzero") && devType == DeviceType::STEPPER_MOTOR) {
+                    StepperMotor* stepper = static_cast<StepperMotor*>(actuator);
+                    stepper->setZeroPosition();
+                    reply.setOK(device->getName(), "zero");
+                } else {
+                    reply.setError(device->getName(), ERROR_UNKNOWN_COMMAND, "Unknown command: " + cmd.getInterface());
+                }
                 break;
         }
         return reply;
@@ -542,15 +566,15 @@ Reply Controller::executeServiceCommand(const Command& cmd) {
     bool success = false;
     
     if (service == "CALIBRATE_X") {
-        success = calibrateAxis(STEPPER_X_NAME);
+        success = calibrateAxis("X");
     } else if (service == "CALIBRATE_Y") {
-        success = calibrateAxis(STEPPER_Y_NAME);
+        success = calibrateAxis("Y");
     } else if (service == "CALIBRATE_Z") {
-        success = calibrateAxis(STEPPER_Z_NAME);
+        success = calibrateAxis("Z");
     } else if (service == "CALIBRATE_ALL") {
-        success = calibrateAxis(STEPPER_X_NAME) && 
-                  calibrateAxis(STEPPER_Y_NAME) && 
-                  calibrateAxis(STEPPER_Z_NAME);
+        success = calibrateAxis("X") && 
+                  calibrateAxis("Y") && 
+                  calibrateAxis("Z");
     } else if (service == "FULL_STATUS") {
         reply.setInfo(getSystemStatus() + "\n" + getDeviceList());
         return reply;
@@ -725,6 +749,7 @@ String Controller::getDeviceList() const {
         if (steppers[i]) {
             list += "- " + steppers[i]->getName() + " (" + steppers[i]->getTypeString() + "): ";
             list += "interfaces [" + steppers[i]->getInterfaces() + "]\n";
+            list += "  Commands: >" + steppers[i]->getName() + " enable | position <rad> | velocity <rad/s> | acceleration <rad/s²> | zero | stop\n";
         }
     }
     
@@ -733,6 +758,7 @@ String Controller::getDeviceList() const {
         if (servos[i]) {
             list += "- " + servos[i]->getName() + " (" + servos[i]->getTypeString() + "): ";
             list += "interfaces [" + servos[i]->getInterfaces() + "]\n";
+            list += "  Commands: >" + servos[i]->getName() + " position <rad> | velocity <rad/s> | stop\n";
         }
     }
     
@@ -741,6 +767,7 @@ String Controller::getDeviceList() const {
         if (mosfets[i]) {
             list += "- " + mosfets[i]->getName() + " (" + mosfets[i]->getTypeString() + "): ";
             list += "interfaces [" + mosfets[i]->getInterfaces() + "]\n";
+            list += "  Commands: >" + mosfets[i]->getName() + " ON | OFF | position <0-1> | velocity <change/s>\n";
         }
     }
     
@@ -749,6 +776,7 @@ String Controller::getDeviceList() const {
         if (switches[i]) {
             list += "- " + switches[i]->getName() + " (" + switches[i]->getTypeString() + "): ";
             list += "interfaces [" + switches[i]->getInterfaces() + "]\n";
+            list += "  Commands: >" + switches[i]->getName() + " read | state?\n";
         }
     }
     
@@ -757,8 +785,12 @@ String Controller::getDeviceList() const {
         if (analogSensors[i]) {
             list += "- " + analogSensors[i]->getName() + " (" + analogSensors[i]->getTypeString() + "): ";
             list += "interfaces [" + analogSensors[i]->getInterfaces() + "]\n";
+            list += "  Commands: >" + analogSensors[i]->getName() + " read | value?\n";
         }
     }
+    
+    list += "\nBulk commands: >STEPPERS velocity 0 | >SERVOS position 0 | >OUTPUTS OFF\n";
+    list += "System: >CONTROLLER STATUS | PING | ESTOP\n";
     
     return list;
 }

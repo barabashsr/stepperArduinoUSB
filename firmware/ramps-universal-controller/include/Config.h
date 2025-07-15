@@ -84,7 +84,7 @@
 // DEBUG SETTINGS
 // ============================================
 #define DEBUG_ENABLED           true
-#define DEBUG_LEVEL             3       // 0=off, 1=errors, 2=warnings, 3=info
+#define DEBUG_LEVEL             2       // 0=off, 1=errors, 2=warnings, 3=info
 
 // ============================================
 // FEATURE TOGGLES

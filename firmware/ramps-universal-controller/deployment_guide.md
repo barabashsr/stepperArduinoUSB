@@ -143,14 +143,14 @@ Z-MAX: Pin D19
 
 ```cpp
 // Example: Configure a 3-axis CNC with gripper
-#define STEPPER_X_NAME          "XAxis"
-#define STEPPER_Y_NAME          "YAxis"  
-#define STEPPER_Z_NAME          "ZAxis"
+#define STEPPER_X_NAME          "X"
+#define STEPPER_Y_NAME          "Y"  
+#define STEPPER_Z_NAME          "Z"
 #define SERVO_0_NAME            "Gripper"
-#define MOSFET_A_NAME           "SpindleMotor"
-#define SWITCH_X_MIN_NAME       "XHome"
-#define SWITCH_Y_MIN_NAME       "YHome"
-#define SWITCH_Z_MIN_NAME       "ZHome"
+#define MOSFET_A_NAME           "Spindle"
+#define SWITCH_X_MIN_NAME       "XMin"
+#define SWITCH_Y_MIN_NAME       "YMin"
+#define SWITCH_Z_MIN_NAME       "ZMin"
 
 // Set steps per revolution (motor steps × microstepping)
 #define STEPPER_X_STEPS_PER_REV     3200    // 200 × 16
@@ -231,6 +231,10 @@ RAMPS 1.4 Universal Controller
 Firmware Version 1.0.0
 ===========================================
 Ready for commands.
+Type 'CONTROLLER LIST' for device list
+Commands start with '>'
+===========================================
+Initialization complete!
 ```
 
 ### 2. List Devices
@@ -244,31 +248,45 @@ Expected output shows all configured devices.
 
 **Stepper Motor Test**:
 ```
->XAxis position 6.28    # One full rotation
->XAxis velocity 1.0     # Continuous rotation at 1 rad/sec
->XAxis velocity 0       # Stop
->XAxis position 0       # Return to start
+>X enable               # Enable motor first!
+>X position 6.28        # One full rotation (2π radians)
+>X velocity 1.0         # Continuous rotation at 1 rad/sec
+>X velocity 0           # Stop
+>X position 0           # Return to start
+>X acceleration 2.0     # Set acceleration to 2 rad/s²
+>X zero                 # Set current position as zero
+>X disable              # Disable motor (releases holding torque)
 ```
 
 **Servo Test**:
 ```
->Gripper position 0     # Minimum position
->Gripper position 1.57  # 90 degrees
->Gripper position 3.14  # Maximum position
+>Servo0 position 0      # Minimum position (0 rad)
+>Servo0 position 1.57   # 90 degrees (π/2 rad)
+>Servo0 position 3.14   # Maximum position (π rad)
+>Servo0 velocity 0.5    # Move at 0.5 rad/sec
 ```
 
 **MOSFET Test**:
 ```
->SpindleMotor ON        # Full power
->SpindleMotor position 0.5  # 50% PWM
->SpindleMotor OFF       # Turn off
+>D10 ON                 # Full power
+>D10 position 0.5       # 50% PWM
+>D10 OFF                # Turn off
+>D9 velocity 0.2        # Fade up at 0.2/sec
+>D8 position 0.75       # 75% power
 ```
 
 **Switch Test**:
 ```
->XHome state?           # Query state
+>XMin state?            # Query state
 # Manually trigger switch
-# Should see: XHome state 1 EVENT
+# Should see: XMin state 1 EVENT
+>YMin read              # Read current value
+```
+
+**Analog Sensor Test**:
+```
+>T0 read                # Read temperature sensor
+>T1 value?              # Query analog value
 ```
 
 ## Device Configuration
@@ -363,7 +381,8 @@ if (service == "HOME_ALL") {
    - Check power supply voltage/current
    - Verify motor wiring (pairs)
    - Check driver installation/orientation
-   - Enable motors first: `>XAxis enable`
+   - **Enable motors first**: `>X enable`
+   - With debug enabled, you'll see: "ERROR: StepperMotor::setPosition() - Motor 'X' is not enabled. Use 'enable' command first."
 
 3. **Motors Moving Wrong Direction**
    - Reverse motor connector
@@ -400,51 +419,70 @@ Enable debugging in `Config.h`:
 
 ### Example 1: CNC Router Control
 ```bash
+# Enable motors
+>X enable
+>Y enable
+>Z enable
+
 # Home all axes
 >SERVICE CALIBRATE_ALL
 
 # Move to position
->XAxis position 100
->YAxis position 50
->ZAxis position -10
+>X position 100
+>Y position 50
+>Z position -10
 
 # Start spindle
->SpindleMotor ON
+>D10 ON
 
 # Cut a line
->XAxis velocity 0.5
+>X velocity 0.5
 # ... wait ...
->XAxis velocity 0
+>X velocity 0
 
 # Stop spindle
->SpindleMotor OFF
+>D10 OFF
+
+# Disable motors
+>X disable
+>Y disable
+>Z disable
 ```
 
 ### Example 2: Pick and Place Robot
 ```bash
+# Enable all axes
+>X enable
+>Y enable
+>Z enable
+
 # Move to pick position
->XAxis position 200
->YAxis position 100
->ZAxis position 50
+>X position 200
+>Y position 100
+>Z position 50
 
 # Open gripper
->Gripper position 3.14
+>Servo0 position 3.14
 
 # Lower to object
->ZAxis position 10
+>Z position 10
 
 # Close gripper
->Gripper position 0
+>Servo0 position 0
 
 # Lift object
->ZAxis position 50
+>Z position 50
 ```
 
 ### Example 3: Temperature Monitoring
 ```bash
 # Read temperature
->TempSensor1 read
-# Returns: TempSensor1 value 24.5
+>T0 read
+# Returns: T0 value 24.5
+
+# Read analog voltage
+>T1 voltage?
+# Returns: T1 voltage 2.3
 
 # Continuous monitoring with events
 # (Configure threshold in sensor setup)
